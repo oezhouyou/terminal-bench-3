@@ -154,28 +154,134 @@ def staging_verify():
         sys.exit(1)
 
 
+def prod_deploy():
+    """Deploy to production."""
+    import httpx
+
+    ensure_server_running()
+    print("Deploying to production environment...")
+    print("  - Reinstalling FastAPI from local source")
+    print("  - Running smoke tests")
+    print()
+
+    try:
+        resp = httpx.post(f"{CLOUD_SERVER_URL}/prod/deploy", timeout=180.0)
+        result = resp.json()
+
+        if result.get("status") == "deployed":
+            print(f"Deployment: SUCCESS")
+            print(f"Environment: production")
+            print(f"Tests run: {result.get('tests_run', 0)}")
+            print(f"Tests passed: {result.get('tests_passed', 0)}")
+            if result.get("errors"):
+                print(f"Errors: {', '.join(result['errors'])}")
+            print(f"\nOverall result: {result.get('overall_result', 'unknown').upper()}")
+        else:
+            print(f"Deployment FAILED: {result.get('message', 'Unknown error')}")
+
+    except Exception as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def prod_monitor():
+    """Monitor production health after deployment."""
+    import httpx
+
+    ensure_server_running()
+    print("Monitoring production environment...")
+    print("  - Running health checks over multiple cycles")
+    print()
+
+    try:
+        resp = httpx.post(f"{CLOUD_SERVER_URL}/prod/monitor", timeout=120.0)
+        result = resp.json()
+
+        status = result.get("status", "unknown").upper()
+        cycles = result.get("cycles", [])
+
+        print(f"Monitor status: {status}")
+        print(f"Cycles completed: {len(cycles)}")
+        for c in cycles:
+            checks_ok = sum(1 for ch in c.get("checks", []) if ch.get("passed"))
+            checks_total = len(c.get("checks", []))
+            print(f"  Cycle {c.get('cycle')}: {checks_ok}/{checks_total} checks passed")
+        if result.get("errors"):
+            print(f"Errors: {', '.join(result['errors'])}")
+        print(f"\nExplanation: {result.get('explanation', 'N/A')}")
+
+    except Exception as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def prod_logs():
+    """Show production logs."""
+    import httpx
+
+    ensure_server_running()
+
+    try:
+        resp = httpx.get(f"{CLOUD_SERVER_URL}/prod/logs", timeout=10.0)
+        logs = resp.json()
+
+        print("=" * 60)
+        print("PRODUCTION DEPLOY LOGS")
+        print("=" * 60)
+        if "deploy" in logs:
+            print(json.dumps(logs["deploy"], indent=2))
+        else:
+            print("No production deploy logs available.")
+
+        print()
+        print("=" * 60)
+        print("PRODUCTION MONITOR LOGS")
+        print("=" * 60)
+        if "monitor" in logs:
+            print(json.dumps(logs["monitor"], indent=2))
+        else:
+            print("No production monitor logs available.")
+
+    except Exception as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
 def main():
     if len(sys.argv) < 3:
-        print("Usage: cloud-cli staging <deploy|logs|verify>")
+        print("Usage: cloud-cli <staging|prod> <action>")
+        print("  cloud-cli staging <deploy|logs|verify>")
+        print("  cloud-cli prod <deploy|monitor|logs>")
         sys.exit(1)
 
     resource = sys.argv[1]
     action = sys.argv[2]
 
-    if resource != "staging":
-        print(f"Unknown resource: {resource}")
-        print("Available resources: staging")
-        sys.exit(1)
-
-    if action == "deploy":
-        staging_deploy()
-    elif action == "logs":
-        staging_logs()
-    elif action == "verify":
-        staging_verify()
+    if resource == "staging":
+        if action == "deploy":
+            staging_deploy()
+        elif action == "logs":
+            staging_logs()
+        elif action == "verify":
+            staging_verify()
+        else:
+            print(f"Unknown staging action: {action}")
+            print("Available actions: deploy, logs, verify")
+            sys.exit(1)
+    elif resource == "prod":
+        if action == "deploy":
+            prod_deploy()
+        elif action == "monitor":
+            prod_monitor()
+        elif action == "logs":
+            prod_logs()
+        else:
+            print(f"Unknown prod action: {action}")
+            print("Available actions: deploy, monitor, logs")
+            sys.exit(1)
     else:
-        print(f"Unknown action: {action}")
-        print("Available actions: deploy, logs, verify")
+        print(f"Unknown resource: {resource}")
+        print("Available resources: staging, prod")
         sys.exit(1)
 
 

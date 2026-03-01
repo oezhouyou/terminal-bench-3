@@ -123,5 +123,13 @@ echo "=== Step 6: Verify the fix ==="
 cloud-cli staging verify
 echo ""
 
+echo "=== Step 7: Deploy to production ==="
+cloud-cli prod deploy
+echo ""
+
+echo "=== Step 8: Monitor production ==="
+cloud-cli prod monitor
+echo ""
+
 echo "=== Done ==="
-echo "Fix applied and verified in staging."
+echo "Fix applied, verified in staging, deployed and monitored in production."

@@ -8,6 +8,7 @@ Verifies that:
 1. The FastAPI source code was modified to fix the Annotated + ForwardRef bug
 2. The sample app works correctly with the fix
 3. Staging verification passed
+4. Production monitoring passed
 """
 
 import json
@@ -22,6 +23,7 @@ from pathlib import Path
 FASTAPI_DEPS_UTILS = Path("/app/fastapi/fastapi/dependencies/utils.py")
 SAMPLE_APP = Path("/app/sample_app.py")
 STAGING_RESULT = Path("/app/staging_result.json")
+PROD_RESULT = Path("/app/prod_result.json")
 TEST_PORT = 9999
 # Use system Python (not the uvx-isolated Python) to access installed FastAPI
 SYSTEM_PYTHON = "/usr/local/bin/python3"
@@ -173,5 +175,23 @@ def test_staging_result_exists_and_passes():
 
     assert status == "pass", (
         f"Staging verification did not pass. Status: {status}. "
+        f"Explanation: {explanation}"
+    )
+
+
+def test_prod_monitor_exists_and_passes():
+    """Tests that production monitoring was run and passed."""
+    assert PROD_RESULT.exists(), (
+        f"Production result file not found at {PROD_RESULT}. "
+        "The agent should have run 'cloud-cli prod deploy' and "
+        "'cloud-cli prod monitor' to create this file."
+    )
+
+    result = json.loads(PROD_RESULT.read_text())
+    status = result.get("status", "unknown")
+    explanation = result.get("explanation", "No explanation provided")
+
+    assert status == "pass", (
+        f"Production monitoring did not pass. Status: {status}. "
         f"Explanation: {explanation}"
     )

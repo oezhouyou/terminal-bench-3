@@ -5,7 +5,7 @@ author_name = "Et"
 author_email = "et@example.com"
 difficulty = "hard"
 category = "debugging"
-tags = ["fastapi", "sdlc", "triage", "forward-reference", "deployment"]
+tags = ["fastapi", "sdlc", "triage", "forward-reference", "deployment", "monitoring"]
 
 [verifier]
 timeout_sec = 300.0

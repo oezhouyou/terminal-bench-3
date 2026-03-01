@@ -10,8 +10,11 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Clone FastAPI at a version that has the bug (0.115.6)
-RUN git clone --depth 1 --branch 0.115.6 https://github.com/fastapi/fastapi.git /app/fastapi
+# FastAPI source lives in the repo submodule at third_party/fastapi, but the
+# Docker build context is limited to environment/, so we clone the same repo
+# and pin to the exact buggy release commit (tag 0.115.6).
+RUN git clone --depth 1 --branch 0.115.6 \
+    https://github.com/fastapi/fastapi.git /app/fastapi
 
 # Install FastAPI in editable mode with standard extras
 RUN pip install -e "/app/fastapi[standard]" && \
