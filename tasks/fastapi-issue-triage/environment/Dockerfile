@@ -17,8 +17,8 @@ RUN git clone --depth 1 --branch 0.115.6 https://github.com/fastapi/fastapi.git 
 RUN pip install -e "/app/fastapi[standard]" && \
     pip install httpx anthropic
 
-# Copy mock service tools and data
-COPY environment/data/ /app/tools/
+# Copy mock service tools and data (build context is environment/)
+COPY data/ /app/tools/
 
 # Set up data directory and move data files
 RUN mkdir -p /app/data && \

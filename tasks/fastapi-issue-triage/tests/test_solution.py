@@ -23,13 +23,15 @@ FASTAPI_DEPS_UTILS = Path("/app/fastapi/fastapi/dependencies/utils.py")
 SAMPLE_APP = Path("/app/sample_app.py")
 STAGING_RESULT = Path("/app/staging_result.json")
 TEST_PORT = 9999
+# Use system Python (not the uvx-isolated Python) to access installed FastAPI
+SYSTEM_PYTHON = "/usr/local/bin/python3"
 
 
 def _start_sample_app():
     """Start the sample app and return the process."""
     proc = subprocess.Popen(
         [
-            sys.executable, "-c",
+            SYSTEM_PYTHON, "-c",
             "from sample_app import app; import uvicorn; "
             f"uvicorn.run(app, host='127.0.0.1', port={TEST_PORT}, log_level='error')"
         ],
