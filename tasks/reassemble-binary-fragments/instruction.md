@@ -62,3 +62,5 @@ Each entry in `recovered_files` must contain:
 - `sha256`: the SHA-256 hex digest of the reassembled file content (lowercase string)
 
 The `recovered_files` array must be sorted by `file_id` in ascending order.
+
+The `/app/output` directory should contain only the reassembled data files and the manifest — do not write any other files.
