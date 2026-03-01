@@ -1,0 +1,9 @@
+{
+  "number": 13056,
+  "title": "Can't use `Annotated` with `ForwardRef`",
+  "state": "open",
+  "labels": ["bug"],
+  "author": "Kludex",
+  "created_at": "2024-12-10T14:23:00Z",
+  "body": "### Description\n\nWhen combining `from __future__ import annotations` with `Annotated[Type, Depends(...)]` where the type is defined after the function that uses it (i.e., it is a forward reference), FastAPI fails to correctly resolve the dependency. Instead, it treats the parameter as a query parameter.\n\n### Steps to Reproduce\n\n```python\nfrom __future__ import annotations\nfrom dataclasses import dataclass\nfrom typing import Annotated\nfrom fastapi import Depends, FastAPI\n\napp = FastAPI()\n\ndef get_potato() -> Potato:\n    return Potato(color='red', size=10)\n\n@app.get('/')\nasync def read_root(potato: Annotated[Potato, Depends(get_potato)]):\n    return {'Hello': 'World'}\n\n@dataclass\nclass Potato:\n    color: str\n    size: int\n```\n\n### Expected Behavior\n\n`GET /` should return `{\"Hello\": \"World\"}` with the `potato` parameter being resolved via the `Depends(get_potato)` dependency.\n\nThe OpenAPI schema should not list `potato` as a query parameter.\n\n### Actual Behavior\n\n`GET /` returns a 422 Validation Error because FastAPI treats `potato` as a required query parameter instead of recognizing `Depends(get_potato)`.\n\nThe OpenAPI schema incorrectly shows `potato` as a query parameter with `color` and `size` fields.\n\n### Workarounds\n\n1. Move the `Potato` class definition above `get_potato` and `read_root`\n2. Use the older style: `potato: Potato = Depends(get_potato)` instead of `Annotated`\n\n### Environment\n\n- FastAPI version: 0.115.x\n- Python version: 3.11+\n- OS: Linux"
+}

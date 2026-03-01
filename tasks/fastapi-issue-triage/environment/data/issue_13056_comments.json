@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "author": "Viicos",
+    "created_at": "2024-12-10T15:10:00Z",
+    "body": "The root cause is in how FastAPI evaluates forward annotations. When `from __future__ import annotations` is used, all annotations become strings. So `Annotated[Potato, Depends(get_potato)]` becomes the string `\"Annotated[Potato, Depends(get_potato)]\"`. FastAPI's `get_typed_annotation` function in `fastapi/dependencies/utils.py` sees it's a string, wraps it in `ForwardRef`, and calls `evaluate_forwardref`. But when `Potato` isn't defined yet in the module namespace at import time (because it's below the function), the evaluation fails or produces incorrect results.\n\nThe key issue is that `evaluate_forwardref` (which delegates to Pydantic's `eval_type_lenient`) doesn't properly handle `Annotated` types that contain unresolvable forward references. When the full `Annotated[...]` string can't be evaluated, the metadata (like `Depends(get_potato)`) is lost, and FastAPI falls through to the default behavior of treating the parameter as a query parameter."
+  },
+  {
+    "id": 2,
+    "author": "abhiaagarwal",
+    "created_at": "2024-12-11T09:30:00Z",
+    "body": "I think the fix should be in `get_typed_annotation` in `fastapi/dependencies/utils.py`. When the annotation string evaluation fails for an `Annotated` type, we should try to partially resolve it — extract the metadata (like `Depends`, `Query`, etc.) even if the inner type can't be fully resolved yet.\n\nOne approach: detect that the string starts with `Annotated[`, try to evaluate it, and if that fails, attempt to parse the string to at least recover the FastAPI-specific metadata. The inner type can remain as a `ForwardRef` to be resolved later."
+  },
+  {
+    "id": 3,
+    "author": "Kludex",
+    "created_at": "2024-12-12T11:00:00Z",
+    "body": "To be more specific about the code path:\n\n1. `get_typed_signature` calls `get_typed_annotation` for each parameter\n2. `get_typed_annotation` sees the annotation is a string (because of `__future__` annotations)\n3. It creates `ForwardRef(\"Annotated[Potato, Depends(get_potato)]\")`\n4. `evaluate_forwardref` tries to evaluate this but fails to properly reconstruct the `Annotated` type when `Potato` can't be resolved\n5. The result is that `analyze_param` in the same file never sees `get_origin(use_annotation) is Annotated` as True\n6. So it falls through to the default case and creates a `params.Query`\n\nThe fix needs to ensure that even when the inner type of `Annotated` can't be resolved, the metadata (Depends, etc.) is preserved and correctly detected by `analyze_param`."
+  }
+]

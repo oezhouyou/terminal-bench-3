@@ -1,0 +1,121 @@
+Overview
+Your goal is to create a terminal bench task using the Harbor framework. The terminal bench is a crowdsourced benchmark that measures an agent's ability to perform tasks using the terminal, and the Harbor framework makes it easy to create these tasks. We hope that this is a fun exercise that also serves as a good starting point for understanding RL environments! 
+
+What makes a good task?
+Generally, a good task is one that is challenging to the model (measured by the pass rate for a frontier model - Claude Opus 4.6) but not unsolvable, realistic (simulates a meaningful, real-world use case), unhackable (the model has to perform the task correctly to get a reward, and there should be no pathway for the model to game the reward), and reproducible (for a given sequence of model actions on the environment, the reward should be the same). We would like to see a novel task relevant to software engineering. This task must not exist in previous benchmark versions or be contained in an open contribution to this benchmark; in other words, we seek an original scenario that you conceived. Beyond this, we encourage you to read up on and understand the benchmark further, and to use your judgment to determine a good task. 
+
+Deliverable
+Fork this repository: https://github.com/harbor-framework/terminal-bench-3/, and create a PR with your task in your own fork. The README and CIs in this repository, as well as other contributions, should give you a good sense of how to contribute. We don't expect you to make a contribution to the actual terminal bench 3 effort, although you are welcome to do so! Just a PR against your own fork works for this assessment. 
+
+
+
+Design a long-horizon software engineering environment for an AI agent, then build a part of it.
+In this exercise, you will design one realistic, self-contained software engineering environment in which an AI agent behaves like a software engineer over a multi-step, long-horizon workflow. After the design discussion, you will build — or direct an AI coding assistant to build — a minimal prototype that demonstrates the core loop.
+Your assignment
+Choose at least one primary SDLC focus area:
+Debugging
+Deployment
+Maintenance
+Verification
+You may include requirements, architecture design, planning, product interaction, or communication as secondary phases.
+Your goal is to describe one concrete task environment and explain how an AI agent would operate inside it.
+
+Environment characteristics your design should satisfy
+Your environment should be:
+1) Realistic
+It should mirror actual software engineering workflows, tooling, artifacts, and deliverables.
+This should not feel like a toy benchmark or isolated LeetCode-style problem.
+2) Long-horizon
+The intended human effort should be hours to days, not a short coding task that can be solved in a few minutes.
+3) Autonomous
+The agent should need to investigate, discover context, verify assumptions, and act without every relevant fact being handed to it upfront.
+4) Challenging
+The task should be meaningfully difficult for strong frontier models. It should require judgment, navigation, and decision-making, not just producing a patch.
+5) More than coding
+Code may be part of the solution, but the difficulty should come substantially from things like:
+debugging
+deployment reasoning
+verification
+tool use
+operational judgment
+communication or coordination
+6) Tool-rich and context-complete
+Assume the environment can provide what a real engineer would need, such as:
+code repositories
+logs and metrics
+configuration files
+documentation
+issue tracker history
+messaging or incident context
+CI/CD systems
+terminal and browser access
+mock or real service dependencies
+A Docker or Docker-in-Docker setup is acceptable.
+7) Realistic discovery and scale
+Not all information should be visible at the start.
+The agent should need to retrieve context from plausible sources across a noisy, multi-component system.
+8) Multi-step and composable
+The task should work as a standalone environment, but also fit into a broader workflow where tasks can share state, history, or prior decisions.
+9) Gradable
+The environment should support:
+crisp checks
+fuzzy evaluation
+multiple valid solutions
+partial credit
+resistance to reward hacking or grader gaming
+
+What to cover in your design discussion
+Please walk through:
+The task prompt and the agent’s role
+What exactly is the agent being asked to do?
+Environment setup and seeded state
+What state, bug, incident, or change request is preloaded into the environment?
+Tooling and artifacts
+What systems, repos, logs, dashboards, tickets, or docs are available?
+Visible vs. discoverable context
+What does the agent see immediately, and what must it uncover?
+Permissions, isolation, and lock-down
+What can the agent modify? What is sandboxed? How do you prevent cheating or hidden-answer access?
+Golden path and failure modes
+What does a strong solution look like? Where are common traps or plausible dead ends?
+Expected human completion time
+Roughly how long would this take a capable human engineer?
+Grading and evaluation
+What signals determine success?
+Examples:
+programmatic checks
+outcome-based checks
+rubric-based or model-based review
+hybrid evaluation
+Metadata and difficulty
+How would this task be labeled, categorized, and calibrated?
+
+Below is the agent task we are going to implement
+
+You are a software engineer agent, that shall be able to take a github issue, and do a triage on the details of the issue, including navigate inside prod environment and collect any data/log you need to figure out the real root cause. Afterwards, please implement a PR to fix the issue if necessary, including code changes, config update, etc. Then, evaluate the PR in staging env. After confirming in staging, deploy to prod. Finally, monitoring the prod env to make sure the issue is really addressed. 
+
+Steps involved:
+Understand the issue
+Triage (optional)
+
+Reasoning the root issue (optional)
+Planning the fix (secondary)
+Implement the fix: regression test inside, test for this issue out of the env.
+Eval in staging: boolean check in mocked staging server MCP
+       Without the PR, launch the staging env, and preserve the log
+       After deploy the PR, launch the staging env, and preserve the log
+       Then compare the logs. Use LLM as judger to decide
+Deploy and monitor prod: boolean check in mocked staging server MCP
+
+
+For this agent, we focus on below repo
+
+https://github.com/fastapi/fastapi
+The Codebase of above repo is already added as submodule
+Any issues in the fastapi can be test case, and below is an example test case
+ https://github.com/fastapi/fastapi/issues/13056
+
+
+Tools and underlying data: 
+MCP: 
+Must have: mocked github mcp reading data from submodule,mocked cloud provider API for staging and prod deployment and logging retrieval
